@@ -18,7 +18,11 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.Locale;
 
 public class UpdaterService extends IntentService {
     private static final String TAG = "UpdaterService";
@@ -34,7 +38,7 @@ public class UpdaterService extends IntentService {
 
     @Override
     protected void onHandleIntent(Intent intent) {
-        Time time = new Time();
+        SimpleDateFormat rfc3339 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault());
 
         ConnectivityManager cm = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
         NetworkInfo ni = cm.getActiveNetworkInfo();
@@ -70,8 +74,14 @@ public class UpdaterService extends IntentService {
                 values.put(ItemsContract.Items.THUMB_URL, object.getString("thumb" ));
                 values.put(ItemsContract.Items.PHOTO_URL, object.getString("photo" ));
                 values.put(ItemsContract.Items.ASPECT_RATIO, object.getString("aspect_ratio" ));
-                time.parse3339(object.getString("published_date"));
-                values.put(ItemsContract.Items.PUBLISHED_DATE, time.toMillis(false));
+                Long dateInMillisec = null;
+                try {
+                    Date tmpDate = rfc3339.parse(object.getString("published_date"));
+                    dateInMillisec = tmpDate.getTime();
+                } catch (ParseException e) {
+                    e.printStackTrace();
+                }
+                values.put(ItemsContract.Items.PUBLISHED_DATE, dateInMillisec);
                 cpo.add(ContentProviderOperation.newInsert(dirUri).withValues(values).build());
             }
 
