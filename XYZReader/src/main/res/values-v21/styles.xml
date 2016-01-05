@@ -4,6 +4,7 @@
     <style name="Theme.Bacon.Main" parent="@style/Theme.Bacon">
     </style>
     <style name="Theme.Bacon.Detail" parent="@style/Theme.Bacon">
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
     </style>
 
