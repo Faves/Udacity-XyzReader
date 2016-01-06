@@ -43,7 +43,10 @@
             <android.support.v7.widget.RecyclerView
                 android:id="@+id/recycler_view"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent" />
+                android:layout_height="match_parent"
+                android:paddingTop="@dimen/list_side_margin"
+                android:paddingLeft="@dimen/list_side_margin"
+                android:paddingStart="@dimen/list_side_margin"/>
 
         </android.support.v4.widget.SwipeRefreshLayout>
 

@@ -6,13 +6,11 @@ import android.content.Intent;
 import android.content.Loader;
 import android.database.Cursor;
 import android.graphics.Bitmap;
-import android.graphics.Color;
-import android.graphics.Rect;
-import android.graphics.Typeface;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.design.widget.CollapsingToolbarLayout;
+import android.support.design.widget.CoordinatorLayout;
 import android.support.v4.app.ShareCompat;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
@@ -25,6 +23,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -43,17 +42,16 @@ public class ArticleDetailFragment extends Fragment implements
     private static final String TAG = "ArticleDetailFragment";
 
     public static final String ARG_ITEM_ID = "item_id";
-    private static final float PARALLAX_FACTOR = 1.25f;
 
     private Cursor mCursor;
     private long mItemId;
     private View mRootView;
     private int mMutedColor = 0xFF333333;
-    //private ObservableScrollView mScrollView;
-    //private DrawInsetsFrameLayout mDrawInsetsFrameLayout;
     private ColorDrawable mStatusBarColorDrawable;
 
+    private CoordinatorLayout mCoordinatorLayout;
     private CollapsingToolbarLayout mCollapsingToolbar;
+    private Toolbar mToolbar;
     private ImageView mPhotoView;
     private int mScrollY;
     private boolean mIsCard = false;
@@ -88,10 +86,6 @@ public class ArticleDetailFragment extends Fragment implements
         setHasOptionsMenu(true);
     }
 
-    public ArticleDetailActivity getActivityCast() {
-        return (ArticleDetailActivity) getActivity();
-    }
-
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
@@ -108,20 +102,50 @@ public class ArticleDetailFragment extends Fragment implements
             Bundle savedInstanceState) {
         mRootView = inflater.inflate(R.layout.fragment_article_detail, container, false);
 
-        Toolbar toolbar = (Toolbar) mRootView.findViewById(R.id.toolbar);
-        ((AppCompatActivity)getActivity()).setSupportActionBar(toolbar);
+        mCoordinatorLayout =
+                (CoordinatorLayout) mRootView.findViewById(R.id.col);
+        mCollapsingToolbar =
+                (CollapsingToolbarLayout) mRootView.findViewById(R.id.collapsing_toolbar);
+        mToolbar = (Toolbar) mRootView.findViewById(R.id.toolbar);
+        ((AppCompatActivity)getActivity()).setSupportActionBar(mToolbar);
         ActionBar ab = ((AppCompatActivity)getActivity()).getSupportActionBar();
         if (ab != null) {
             ab.setDisplayShowTitleEnabled(false);
             ab.setDisplayHomeAsUpEnabled(true);
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                // Set the padding to match the Status Bar height
-                //toolbar.setTranslationY(getStatusBarHeight());
+                /* Try to fix status bar padding on Toolbar into ViewPager
+                 * -> http://stackoverflow.com/questions/31368781/coordinatorlayout-status-bar-padding-disappears-from-viewpager-2nd-page
+                 */
+                final int initialToolbarHeight = mToolbar.getLayoutParams().height;
+                final int initialStatusBarHeight = getStatusBarHeight();
+                mToolbar.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+                    @Override
+                    public void onGlobalLayout() {
+                        int[] locToolbar = new int[2];
+                        mToolbar.getLocationOnScreen(locToolbar);
+                        int yToolbar = locToolbar[1];
+                        int topPaddingToolbar = mToolbar.getPaddingTop();
+                        //Log.d("onCreateView", "#" + mItemId + " : -toolbar : " + yToolbar+"/"+ initialToolbarHeight +" - "+topPaddingToolbar);
+                        if (isAdded()) {
+                            //normal case : system status bar padding on toolbar : yToolbar = initialStatusBarHeight && topPaddingToolbar = 0
+                            //abnormal case : no system status bar padding on toolbar -> toolbar behind status bar => add custom padding
+                            if (yToolbar != initialStatusBarHeight && topPaddingToolbar == 0) {
+                                // Set the padding to match the Status Bar height
+                                mToolbar.setPadding(0, initialStatusBarHeight, 0, 0);
+                                mToolbar.getLayoutParams().height = initialToolbarHeight + initialStatusBarHeight;
+                            }
+                            //abnormal case : system status bar padding and custom padding on toolbar -> toolbar with padding too large => remove custom padding
+                            else if (yToolbar == initialStatusBarHeight && topPaddingToolbar == initialStatusBarHeight) {
+                                // Set the padding to match the Status Bar height
+                                mToolbar.setPadding(0, 0, 0, 0);
+                                mToolbar.getLayoutParams().height = initialToolbarHeight;
+                            }
+                        }
+                    }
+                });
             }
         }
-        mCollapsingToolbar =
-                (CollapsingToolbarLayout) mRootView.findViewById(R.id.collapsing_toolbar);
 
         mPhotoView = (ImageView) mRootView.findViewById(R.id.photo);
 
@@ -146,13 +170,19 @@ public class ArticleDetailFragment extends Fragment implements
             return;
         }
 
+        final int primaryColor = getResources().getColor(R.color.theme_primary);
+        final int transparentColor = getResources().getColor(android.R.color.transparent);
+
         TextView titleView = (TextView) mRootView.findViewById(R.id.article_title);
         TextView bylineView = (TextView) mRootView.findViewById(R.id.article_byline);
         bylineView.setMovementMethod(new LinkMovementMethod());
         TextView bodyView = (TextView) mRootView.findViewById(R.id.article_body);
 
         if (mCursor != null) {
-            titleView.setText(mCursor.getString(ArticleLoader.Query.TITLE));
+            String title = mCursor.getString(ArticleLoader.Query.TITLE);
+            titleView.setText(title);
+            Log.d("onCreateView", "#" + mItemId + " : " + title);
+
             bylineView.setText(Html.fromHtml(
                     DateUtils.getRelativeTimeSpanString(
                             mCursor.getLong(ArticleLoader.Query.PUBLISHED_DATE),
@@ -161,7 +191,10 @@ public class ArticleDetailFragment extends Fragment implements
                             + " by <font color='#ffffff'>"
                             + mCursor.getString(ArticleLoader.Query.AUTHOR)
                             + "</font>"));
+
             bodyView.setText(Html.fromHtml(mCursor.getString(ArticleLoader.Query.BODY)));
+
+            mPhotoView.setContentDescription(title);
             ImageLoaderHelper.getInstance(getActivity()).getImageLoader()
                     .get(mCursor.getString(ArticleLoader.Query.PHOTO_URL), new ImageLoader.ImageListener() {
                         @Override
@@ -169,12 +202,14 @@ public class ArticleDetailFragment extends Fragment implements
                             Bitmap bitmap = imageContainer.getBitmap();
                             if (bitmap != null) {
                                 Palette p = Palette.from(bitmap).maximumColorCount(12).generate();
-                                mMutedColor = p.getDarkMutedColor(0xFF333333);
+                                mMutedColor = p.getDarkMutedColor(primaryColor);
                                 mPhotoView.setImageBitmap(imageContainer.getBitmap());
                                 mRootView.findViewById(R.id.meta_bar)
                                         .setBackgroundColor(mMutedColor);
+
+                                //color also the toolbar and the status bar
                                 mCollapsingToolbar.setContentScrimColor(mMutedColor);
-                                mCollapsingToolbar.setStatusBarScrimColor(p.getDarkVibrantColor(0xFF333333));
+                                mCollapsingToolbar.setStatusBarScrimColor(mMutedColor);
                             }
                         }
 
@@ -220,8 +255,9 @@ public class ArticleDetailFragment extends Fragment implements
         bindViews();
     }
 
+
     // A method to find height of the status bar
-    public int getStatusBarHeight() {
+    private int getStatusBarHeight() {
         int result = 0;
         int resourceId = getResources().getIdentifier("status_bar_height", "dimen", "android");
         if (resourceId > 0) {

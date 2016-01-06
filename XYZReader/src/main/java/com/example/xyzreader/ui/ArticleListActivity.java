@@ -52,6 +52,10 @@ public class ArticleListActivity extends AppCompatActivity implements
         mSwipeRefreshLayout.setOnRefreshListener(this);
 
         mRecyclerView = (RecyclerView) findViewById(R.id.recycler_view);
+        mRecyclerView.addItemDecoration(new DividerItemDecoration(this, R.drawable.padded_divider, DividerItemDecoration.VERTICAL_LIST));
+        mRecyclerView.addItemDecoration(new DividerItemDecoration(this, R.drawable.padded_divider, DividerItemDecoration.HORIZONTAL_LIST));
+        mRecyclerView.setHasFixedSize(true);
+
         getLoaderManager().initLoader(0, null, this);
 
         if (savedInstanceState == null) {
