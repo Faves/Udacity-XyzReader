@@ -1,7 +1,4 @@
 <resources>
     <!-- detail -->
-    <bool name="detail_is_card">true</bool>
-
-    <dimen name="detail_photo_height">600dp</dimen>
-    <dimen name="detail_card_top_margin">256dp</dimen>
+    <dimen name="detail_card_horiz_margin">192dp</dimen> <!-- fab_margin * 2 + fab_width -->
 </resources>

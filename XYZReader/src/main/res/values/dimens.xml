@@ -11,10 +11,10 @@
     <dimen name="detail_body_text_size">14sp</dimen> <!-- body style, English like -->
     <item name="detail_body_line_spacing_multiplier" format="float" type="fraction">1.25</item>
 
-    <dimen name="fab_elevation">4dp</dimen>
-    <dimen name="fab_press_translation_z">6dp</dimen>
+    <dimen name="fab_elevation">6dp</dimen>    <!-- spec FAB - resting elevation : 6dp -->
+    <dimen name="fab_press_translation_z">6dp</dimen>   <!-- spec : 12dp = fab_elevation + fab_press_translation_z -->
     <dimen name="fab_margin">24dp</dimen>
 
-    <dimen name="theme_appbar_elevation">4dp</dimen>
+    <dimen name="theme_appbar_elevation">4dp</dimen>    <!-- spec FAB - pressed : 4dp -->
 
 </resources>

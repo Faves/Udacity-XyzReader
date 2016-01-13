@@ -16,10 +16,6 @@
 -->
 
 <resources>
-    <color name="photo_placeholder">#ccc</color>
-    <color name="ltgray">#ffe0e0e0</color>
-
-
     <color name="white">@android:color/white</color>
     <color name="grey">#cccccc</color>
 
@@ -27,6 +23,7 @@
     <color name="theme_primary">#FF5722</color>  <!-- 500 -->
     <color name="theme_primary_dark">#E64A19</color>  <!-- 700 -->
     <color name="theme_primary_light">#FFCCBC</color> <!-- 100 -->
+    <color name="theme_primary_background">#FBE9E7</color> <!-- 50 -->
     <color name="theme_accent">#69F0AE</color> <!-- A200 - Green -->
 
     <color name="theme_primary_text">#212121</color>

@@ -6,12 +6,13 @@ import android.content.Intent;
 import android.content.Loader;
 import android.database.Cursor;
 import android.graphics.Bitmap;
-import android.graphics.drawable.ColorDrawable;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.CollapsingToolbarLayout;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.v4.app.ShareCompat;
+import android.support.v4.widget.NestedScrollView;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.graphics.Palette;
@@ -42,20 +43,18 @@ public class ArticleDetailFragment extends Fragment implements
     private static final String TAG = "ArticleDetailFragment";
 
     public static final String ARG_ITEM_ID = "item_id";
+    private static final float PARALLAX_FACTOR = 1.25f;
 
     private Cursor mCursor;
     private long mItemId;
     private View mRootView;
     private int mMutedColor = 0xFF333333;
-    private ColorDrawable mStatusBarColorDrawable;
 
-    private CoordinatorLayout mCoordinatorLayout;
+    private NestedScrollView mArticle_body_container;
     private CollapsingToolbarLayout mCollapsingToolbar;
     private Toolbar mToolbar;
     private ImageView mPhotoView;
-    private int mScrollY;
     private boolean mIsCard = false;
-    private int mStatusBarFullOpacityBottom;
 
     /**
      * Mandatory empty constructor for the fragment manager to instantiate the
@@ -81,8 +80,6 @@ public class ArticleDetailFragment extends Fragment implements
         }
 
         mIsCard = getResources().getBoolean(R.bool.detail_is_card);
-        mStatusBarFullOpacityBottom = getResources().getDimensionPixelSize(
-                R.dimen.detail_card_top_margin);
         setHasOptionsMenu(true);
     }
 
@@ -102,15 +99,17 @@ public class ArticleDetailFragment extends Fragment implements
             Bundle savedInstanceState) {
         mRootView = inflater.inflate(R.layout.fragment_article_detail, container, false);
 
-        mCoordinatorLayout =
-                (CoordinatorLayout) mRootView.findViewById(R.id.col);
+        final int transparentColor = getResources().getColor(android.R.color.transparent);
+
         mCollapsingToolbar =
                 (CollapsingToolbarLayout) mRootView.findViewById(R.id.collapsing_toolbar);
+        mCollapsingToolbar
+                .setExpandedTitleColor(transparentColor);
         mToolbar = (Toolbar) mRootView.findViewById(R.id.toolbar);
         ((AppCompatActivity)getActivity()).setSupportActionBar(mToolbar);
         ActionBar ab = ((AppCompatActivity)getActivity()).getSupportActionBar();
         if (ab != null) {
-            ab.setDisplayShowTitleEnabled(false);
+            ab.setDisplayShowTitleEnabled(true);
             ab.setDisplayHomeAsUpEnabled(true);
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -149,8 +148,6 @@ public class ArticleDetailFragment extends Fragment implements
 
         mPhotoView = (ImageView) mRootView.findViewById(R.id.photo);
 
-        mStatusBarColorDrawable = new ColorDrawable(0);
-
         mRootView.findViewById(R.id.share_fab).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -160,6 +157,14 @@ public class ArticleDetailFragment extends Fragment implements
                         .getIntent(), getString(R.string.action_share)));
             }
         });
+
+        mArticle_body_container = (NestedScrollView)mRootView.findViewById(R.id.article_body_container);
+        CoordinatorLayout.LayoutParams params =
+                (CoordinatorLayout.LayoutParams) mArticle_body_container.getLayoutParams();
+        AppBarLayout.ScrollingViewBehavior behavior =
+                (AppBarLayout.ScrollingViewBehavior) params.getBehavior();
+        behavior.setOverlayTop(getResources().getDimensionPixelSize(R.dimen.detail_card_top_overlay));
+
 
         bindViews();
         return mRootView;
@@ -171,7 +176,6 @@ public class ArticleDetailFragment extends Fragment implements
         }
 
         final int primaryColor = getResources().getColor(R.color.theme_primary);
-        final int transparentColor = getResources().getColor(android.R.color.transparent);
 
         TextView titleView = (TextView) mRootView.findViewById(R.id.article_title);
         TextView bylineView = (TextView) mRootView.findViewById(R.id.article_byline);
@@ -181,7 +185,7 @@ public class ArticleDetailFragment extends Fragment implements
         if (mCursor != null) {
             String title = mCursor.getString(ArticleLoader.Query.TITLE);
             titleView.setText(title);
-            Log.d("onCreateView", "#" + mItemId + " : " + title);
+            mCollapsingToolbar.setTitle(title);
 
             bylineView.setText(Html.fromHtml(
                     DateUtils.getRelativeTimeSpanString(

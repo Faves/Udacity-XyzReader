@@ -36,12 +36,17 @@ public class ArticleListActivity extends AppCompatActivity implements
     private Toolbar mToolbar;
     private SwipeRefreshLayout mSwipeRefreshLayout;
     private RecyclerView mRecyclerView;
+    private int mColumnCount;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_article_list);
 
+        //init
+        mColumnCount = getResources().getInteger(R.integer.list_column_count);
+
+        //view
         mToolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(mToolbar);
         if (getSupportActionBar() != null) {
@@ -52,10 +57,9 @@ public class ArticleListActivity extends AppCompatActivity implements
         mSwipeRefreshLayout.setOnRefreshListener(this);
 
         mRecyclerView = (RecyclerView) findViewById(R.id.recycler_view);
-        mRecyclerView.addItemDecoration(new DividerItemDecoration(this, R.drawable.padded_divider, DividerItemDecoration.VERTICAL_LIST));
-        mRecyclerView.addItemDecoration(new DividerItemDecoration(this, R.drawable.padded_divider, DividerItemDecoration.HORIZONTAL_LIST));
         mRecyclerView.setHasFixedSize(true);
 
+        //data
         getLoaderManager().initLoader(0, null, this);
 
         if (savedInstanceState == null) {
@@ -106,9 +110,9 @@ public class ArticleListActivity extends AppCompatActivity implements
         Adapter adapter = new Adapter(cursor);
         adapter.setHasStableIds(true);
         mRecyclerView.setAdapter(adapter);
-        int columnCount = getResources().getInteger(R.integer.list_column_count);
+
         StaggeredGridLayoutManager sglm =
-                new StaggeredGridLayoutManager(columnCount, StaggeredGridLayoutManager.VERTICAL);
+                new StaggeredGridLayoutManager(mColumnCount, StaggeredGridLayoutManager.VERTICAL);
         mRecyclerView.setLayoutManager(sglm);
     }
 
